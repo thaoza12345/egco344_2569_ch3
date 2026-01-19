@@ -191,7 +191,8 @@
                 }
                 
                 const users = await usersResponse.json();
-                const usage = await usageResponse.json();
+                const usageData = await usageResponse.json();
+                const usage = usageData.Sheet1;
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('content').style.display = 'block';
@@ -207,17 +208,18 @@
         }
         
         function displayStats(users, usage) {
+            const totalUsers = users.reduce((sum, user) => sum + (user.residential_count || 0) + (user.small_business_count || 0) + (user.medium_business_count || 0) + (user.large_business_count || 0) + (user.specialized_business_count || 0), 0);
             const statsHTML = `
                 <div class="stat-box">
                     <h3>Total Users</h3>
-                    <div class="value">${users.length || 0}</div>
+                    <div class="value">${totalUsers}</div>
                 </div>
                 <div class="stat-box">
                     <h3>Total Records</h3>
                     <div class="value">${usage.length || 0}</div>
                 </div>
                 <div class="stat-box">
-                    <h3>Avg Usage</h3>
+                    <h3>Avg Usage (KWh)</h3>
                     <div class="value">${getAverageUsage(usage).toFixed(2)}</div>
                 </div>
             `;
@@ -226,15 +228,16 @@
         
         function getAverageUsage(usage) {
             if (!usage.length) return 0;
-            const sum = usage.reduce((acc, item) => acc + (item.usage || 0), 0);
+            const totals = usage.map(item => (item.residential_kwh || 0) + (item.small_business_kwh || 0) + (item.medium_business_kwh || 0) + (item.large_business_kwh || 0));
+            const sum = totals.reduce((acc, val) => acc + val, 0);
             return sum / usage.length;
         }
         
         function displayCharts(users, usage) {
-            const usersByRegion = groupBy(users, 'region');
+            const usersByRegion = groupBy(users, 'province_name');
             const usageByRegion = groupUsageByRegion(usage);
             
-            // Users Chart
+            // Users Chart - showing number of provinces (but each has one entry)
             const usersCtx = document.getElementById('usersChart').getContext('2d');
             if (usersChart) usersChart.destroy();
             usersChart = new Chart(usersCtx, {
@@ -242,7 +245,7 @@
                 data: {
                     labels: Object.keys(usersByRegion),
                     datasets: [{
-                        label: 'Number of Users',
+                        label: 'Number of Provinces',
                         data: Object.values(usersByRegion).map(arr => arr.length),
                         backgroundColor: '#667eea',
                         borderColor: '#764ba2',
@@ -277,17 +280,17 @@
         }
         
         function displayUsersTable(users) {
-            const thead = '<tr><th>User ID</th><th>Region</th><th>Name</th></tr>';
+            const thead = '<tr><th>Province</th><th>Year</th><th>Residential Count</th><th>Small Business</th><th>Medium Business</th><th>Large Business</th></tr>';
             const tbody = users.slice(0, 10).map(user => 
-                `<tr><td>${user.user_id || '-'}</td><td>${user.region || '-'}</td><td>${user.name || '-'}</td></tr>`
+                `<tr><td>${user.province_name || '-'}</td><td>${user.year || '-'}</td><td>${user.residential_count || '-'}</td><td>${user.small_business_count || '-'}</td><td>${user.medium_business_count || '-'}</td><td>${user.large_business_count || '-'}</td></tr>`
             ).join('');
             document.getElementById('usersTable').innerHTML = thead + tbody;
         }
         
         function displayUsageTable(usage) {
-            const thead = '<tr><th>User ID</th><th>Usage</th><th>Date</th></tr>';
+            const thead = '<tr><th>Province</th><th>Year</th><th>Residential KWh</th><th>Small Business KWh</th><th>Medium Business KWh</th><th>Large Business KWh</th></tr>';
             const tbody = usage.slice(0, 10).map(item => 
-                `<tr><td>${item.user_id || '-'}</td><td>${item.usage || '-'}</td><td>${item.date || '-'}</td></tr>`
+                `<tr><td>${item.province_name || '-'}</td><td>${item.year || '-'}</td><td>${item.residential_kwh || '-'}</td><td>${item.small_business_kwh || '-'}</td><td>${item.medium_business_kwh || '-'}</td><td>${item.large_business_kwh || '-'}</td></tr>`
             ).join('');
             document.getElementById('usageTable').innerHTML = thead + tbody;
         }
@@ -303,8 +306,9 @@
         
         function groupUsageByRegion(usage) {
             return usage.reduce((acc, item) => {
-                const region = item.region || 'Unknown';
-                acc[region] = (acc[region] || 0) + (item.usage || 0);
+                const region = item.province_name || 'Unknown';
+                const totalKwh = (item.residential_kwh || 0) + (item.small_business_kwh || 0) + (item.medium_business_kwh || 0) + (item.large_business_kwh || 0);
+                acc[region] = (acc[region] || 0) + totalKwh;
                 return acc;
             }, {});
         }
