@@ -14,7 +14,7 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -55,7 +55,7 @@
         }
         
         .card h2 {
-            color: #667eea;
+            color: #4facfe;
             margin-bottom: 20px;
             font-size: 1.5em;
         }
@@ -76,13 +76,13 @@
         }
         
         .stat-box h3 {
-            color: #764ba2;
+            color: #00f2fe;
             font-size: 0.9em;
             margin-bottom: 10px;
         }
         
         .stat-box .value {
-            color: #667eea;
+            color: #4facfe;
             font-size: 2em;
             font-weight: bold;
         }
@@ -94,7 +94,7 @@
         }
         
         table th {
-            background: #667eea;
+            background: #4facfe;
             color: white;
             padding: 12px;
             text-align: left;
@@ -155,7 +155,7 @@
             <div class="stats" id="stats-container"></div>
             <div class="dashboard">
                 <div class="card">
-                    <h2>Users by Region</h2>
+                    <h2>Users by Type</h2>
                     <canvas id="usersChart"></canvas>
                 </div>
                 <div class="card">
@@ -237,18 +237,22 @@
             const usersByRegion = groupBy(users, 'province_name');
             const usageByRegion = groupUsageByRegion(usage);
             
-            // Users Chart - showing number of provinces (but each has one entry)
+            // Users by Type Chart
+            const userTypes = ['residential_count', 'small_business_count', 'medium_business_count', 'large_business_count', 'specialized_business_count'];
+            const userTypeLabels = ['Residential', 'Small Business', 'Medium Business', 'Large Business', 'Specialized Business'];
+            const userTypeData = userTypes.map(type => users.reduce((sum, user) => sum + (user[type] || 0), 0));
+            
             const usersCtx = document.getElementById('usersChart').getContext('2d');
             if (usersChart) usersChart.destroy();
             usersChart = new Chart(usersCtx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(usersByRegion),
+                    labels: userTypeLabels,
                     datasets: [{
-                        label: 'Number of Provinces',
-                        data: Object.values(usersByRegion).map(arr => arr.length),
-                        backgroundColor: '#667eea',
-                        borderColor: '#764ba2',
+                        label: 'Total Users',
+                        data: userTypeData,
+                        backgroundColor: '#4facfe',
+                        borderColor: '#00f2fe',
                         borderWidth: 1
                     }]
                 },
@@ -267,7 +271,7 @@
                     labels: Object.keys(usageByRegion),
                     datasets: [{
                         data: Object.values(usageByRegion),
-                        backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
+                        backgroundColor: ['#4facfe', '#00f2fe', '#a8edea', '#fed6e3', '#d299c2']
                     }]
                 },
                 options: { responsive: true }
