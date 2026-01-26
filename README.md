@@ -1,2 +1,2 @@
 # egco344_2569_ch3
-this is the document for egco 344 2
+this is the document for egco 3442
